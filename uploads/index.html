@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PDF Mock Test Generator</title>
+    <link rel="stylesheet" href="/styles.css?v=20260703-premium-ui">
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <span class="brand-mark">PM</span>
+          <div>
+            <strong>PDF Mock Test Generator</strong>
+            <small>Local exam builder</small>
+          </div>
+        </div>
+        <nav class="nav-list" aria-label="Primary">
+          <button class="nav-item active" data-view="dashboard">Dashboard</button>
+          <button class="nav-item" data-view="upload">Upload & Extract</button>
+          <button class="nav-item" data-view="library">Question Bank</button>
+          <button class="nav-item" data-view="test">Mock Test</button>
+          <button class="nav-item" data-view="review">Review</button>
+        </nav>
+        <div class="sidebar-footer">
+          <button id="themeToggle" class="ghost-button" type="button">Toggle theme</button>
+          <button id="fullscreenBtn" class="ghost-button" type="button">Fullscreen</button>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div>
+            <h1 id="viewTitle">Dashboard</h1>
+            <p id="viewSubtitle">Track PDFs, tests, accuracy, and weak topics.</p>
+          </div>
+          <div class="topbar-actions">
+            <label class="search-box">
+              <span>Search</span>
+              <input id="globalSearch" type="search" placeholder="Question, topic, page">
+            </label>
+            <button id="exportJsonBtn" class="primary-button" type="button">Export JSON</button>
+          </div>
+        </header>
+
+        <section id="dashboardView" class="view active">
+          <div class="metric-grid">
+            <article class="metric-card"><span>Total PDFs</span><strong id="metricPdfs">0</strong></article>
+            <article class="metric-card"><span>Total Questions</span><strong id="metricQuestions">0</strong></article>
+            <article class="metric-card"><span>Completed Tests</span><strong id="metricTests">0</strong></article>
+            <article class="metric-card"><span>Average Accuracy</span><strong id="metricAccuracy">0%</strong></article>
+            <article class="metric-card"><span>Bookmarks</span><strong id="metricBookmarks">0</strong></article>
+          </div>
+          <div class="dashboard-grid">
+            <section class="panel">
+              <div class="panel-header"><h2>Performance</h2></div>
+              <canvas id="accuracyChart" width="720" height="260"></canvas>
+            </section>
+            <section class="panel">
+              <div class="panel-header"><h2>Topic Strength</h2></div>
+              <div id="topicInsights" class="topic-list"></div>
+            </section>
+          </div>
+        </section>
+
+        <section id="uploadView" class="view">
+          <section class="panel upload-panel">
+            <div class="panel-header">
+              <div>
+                <h2>Upload PDFs</h2>
+                <p>Select one or more files, then choose pages like 1-20,25-40 or leave blank for all pages.</p>
+              </div>
+            </div>
+            <form id="uploadForm" class="upload-form">
+              <label class="drop-zone" for="pdfInput">
+                <input id="pdfInput" name="pdfs" type="file" accept="application/pdf" multiple>
+                <span class="drop-icon">PDF</span>
+                <strong>Drop PDFs here or click to select</strong>
+                <small id="selectedFilesText">No PDF selected yet</small>
+              </label>
+              <div id="selectedFilesList" class="selected-files"></div>
+              <div class="form-row">
+                <label>Page range <input id="pageRangeInput" type="text" placeholder="Entire PDF"></label>
+                <label>Language
+                  <select id="ocrLanguage">
+                    <option value="eng">English</option>
+                    <option value="hin+eng">Hindi + English</option>
+                  </select>
+                </label>
+                <button id="extractBtn" class="primary-button" type="submit">Extract Questions</button>
+              </div>
+            </form>
+            <div class="progress-wrap">
+              <div id="parseProgress" class="progress-bar"><span></span></div>
+              <p id="parseStatus">Waiting for PDFs.</p>
+            </div>
+          </section>
+          <section class="panel">
+            <div class="panel-header"><h2>Extraction Log</h2></div>
+            <div id="extractLog" class="log-box"></div>
+          </section>
+        </section>
+
+        <section id="libraryView" class="view">
+          <section class="panel">
+            <div class="panel-header">
+              <h2>Question Bank</h2>
+              <div class="filter-row">
+                <select id="topicFilter"><option value="">All topics</option></select>
+                <select id="difficultyFilter"><option value="">All difficulty</option></select>
+                <select id="pdfFilter"><option value="">All PDFs</option></select>
+                <select id="qualityFilter">
+                  <option value="">All quality</option>
+                  <option value="complete">Complete only</option>
+                  <option value="duplicates">Duplicates only</option>
+                </select>
+                <button id="removeDuplicatesBtn" class="danger-button" type="button">Remove Duplicates</button>
+                <button id="removeIncompleteBtn" class="danger-button" type="button">Remove Incomplete</button>
+                <button id="resetBankBtn" class="danger-button" type="button">Reset Question Bank</button>
+                <button id="importBtn" class="secondary-button" type="button">Import JSON</button>
+                <input id="importInput" type="file" accept="application/json" hidden>
+              </div>
+            </div>
+            <div id="duplicateSummary" class="quality-summary"></div>
+            <div id="questionList" class="question-list"></div>
+          </section>
+        </section>
+
+        <section id="testView" class="view">
+          <section id="testSetup" class="test-builder">
+            <div class="builder-hero">
+              <div>
+                <span class="eyebrow">Custom Mock Builder</span>
+                <h2>Create exactly the test you want</h2>
+                <p>Choose category, topic, difficulty, PDF source, page range, marks, timer, and practice mode before starting.</p>
+              </div>
+              <div class="builder-score">
+                <span>Matching Questions</span>
+                <strong id="matchingQuestionCount">0</strong>
+                <small id="builderSummary">No filters applied</small>
+              </div>
+            </div>
+
+            <div class="builder-layout">
+              <section class="builder-card">
+                <div class="builder-card-head">
+                  <span class="step-badge">1</span>
+                  <div>
+                    <h3>Question Source</h3>
+                    <p>Filter from your question bank categories.</p>
+                  </div>
+                </div>
+                <div class="builder-grid">
+                  <label>Topic
+                    <select id="testTopicFilter">
+                      <option value="">All topics</option>
+                    </select>
+                  </label>
+                  <label>Difficulty
+                    <select id="testDifficultyFilter">
+                      <option value="">All difficulties</option>
+                    </select>
+                  </label>
+                  <label>PDF File
+                    <select id="testPdfFilter">
+                      <option value="">All PDFs</option>
+                    </select>
+                  </label>
+                  <label>Question quality
+                    <select id="testQualityFilter">
+                      <option value="complete">Complete questions only</option>
+                      <option value="all">Complete + incomplete</option>
+                      <option value="duplicates">Duplicate questions only</option>
+                    </select>
+                  </label>
+                  <label>Page range
+                    <input id="testPageRange" type="text" placeholder="Any page, e.g. 1-10,25">
+                  </label>
+                </div>
+                <div id="builderChips" class="builder-chips"></div>
+              </section>
+
+              <section class="builder-card">
+                <div class="builder-card-head">
+                  <span class="step-badge">2</span>
+                  <div>
+                    <h3>Test Pattern</h3>
+                    <p>Control size, timer, marking, and flow.</p>
+                  </div>
+                </div>
+                <div class="builder-grid">
+                  <label>Questions
+                    <input id="testCount" type="number" min="1" value="50">
+                  </label>
+                  <label>Timer minutes
+                    <input id="timerMinutes" type="number" min="1" value="60">
+                  </label>
+                  <label>Correct marks
+                    <input id="positiveMarks" type="number" value="1" step="0.25">
+                  </label>
+                  <label>Negative marks
+                    <input id="negativeMarks" type="number" value="-1" step="0.25">
+                  </label>
+                </div>
+                <div class="toggle-grid">
+                  <label><input id="shuffleQuestions" type="checkbox" checked> Shuffle questions</label>
+                  <label><input id="shuffleOptions" type="checkbox"> Shuffle options</label>
+                  <label><input id="instantFeedback" type="checkbox" checked> Instant feedback</label>
+                </div>
+              </section>
+            </div>
+
+            <section class="builder-card">
+              <div class="builder-card-head">
+                <span class="step-badge">3</span>
+                <div>
+                  <h3>Start Mode</h3>
+                  <p>Pick a regular exam, revision test, or focused practice set.</p>
+                </div>
+              </div>
+              <div class="preset-row">
+                <button class="preset-card active" data-mode="random" type="button">
+                  <strong>Custom Exam</strong>
+                  <span>Use selected topic, difficulty, PDF, and page filters.</span>
+                </button>
+                <button class="preset-card" data-mode="practice" type="button">
+                  <strong>Practice Mode</strong>
+                  <span>Same filters with a relaxed practice flow.</span>
+                </button>
+                <button class="preset-card" data-mode="wrong" type="button">
+                  <strong>Wrong Answers</strong>
+                  <span>Revise questions you previously answered wrong.</span>
+                </button>
+                <button class="preset-card" data-mode="bookmarked" type="button">
+                  <strong>Bookmarked</strong>
+                  <span>Build a test from saved difficult questions.</span>
+                </button>
+              </div>
+              <div class="builder-actions">
+                <button id="resetBuilder" class="secondary-button" type="button">Reset Filters</button>
+                <button id="startCustomTest" class="primary-button" type="button">Start Custom Mock Test</button>
+              </div>
+            </section>
+          </section>
+
+          <section id="examScreen" class="exam-layout hidden">
+            <article class="exam-main">
+              <div class="exam-stats">
+                <span id="timerDisplay">00:00</span>
+                <span id="scoreDisplay">Score 0</span>
+                <span id="attemptDisplay">Attempted 0</span>
+                <span id="leftDisplay">Left 0</span>
+              </div>
+              <div class="progress-bar"><span id="testProgress"></span></div>
+              <div class="question-head">
+                <h2 id="questionNumber">Question 1</h2>
+                <button id="bookmarkBtn" class="ghost-button" type="button">Bookmark</button>
+              </div>
+              <div id="questionText" class="question-text"></div>
+              <div id="optionList" class="option-list"></div>
+              <section id="explanationBox" class="explanation-box hidden"></section>
+              <div class="exam-actions">
+                <button id="prevQuestion" class="secondary-button" type="button">Previous</button>
+                <button id="markReview" class="secondary-button" type="button">Mark for Review</button>
+                <button id="nextQuestion" class="primary-button" type="button">Next</button>
+                <button id="finishTest" class="danger-button" type="button">Finish</button>
+              </div>
+            </article>
+            <aside class="palette-panel">
+              <h3>Question Palette</h3>
+              <div id="questionPalette" class="question-palette"></div>
+            </aside>
+          </section>
+        </section>
+
+        <section id="reviewView" class="view">
+          <section id="resultSummary" class="panel"></section>
+          <section class="review-layout">
+            <div id="reviewList" class="review-list"></div>
+            <aside class="pdf-pane">
+              <div class="panel-header">
+                <div>
+                  <h2>Original PDF Page</h2>
+                  <p id="pdfReviewStatus">Click Review From Source to search inside the saved PDF.</p>
+                </div>
+                <div class="pdf-tools">
+                  <button id="pdfZoomOut" class="ghost-button" type="button">-</button>
+                  <span id="pdfZoomLabel">125%</span>
+                  <button id="pdfZoomIn" class="ghost-button" type="button">+</button>
+                </div>
+              </div>
+              <div id="pdfStage" class="pdf-stage">
+                <canvas id="pdfCanvas"></canvas>
+                <div id="pdfHighlightLayer" class="pdf-highlight-layer"></div>
+              </div>
+            </aside>
+          </section>
+        </section>
+      </main>
+    </div>
+    <template id="questionItemTemplate">
+      <article class="question-card"></article>
+    </template>
+    <script type="module" src="/js/app.js?v=20260703-premium-ui"></script>
+  </body>
+</html>
